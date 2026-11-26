@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Matematika</title>
+    <style>
+        /* --- CSS Styling --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f3f4f6;
+        }
+
+        .calculator {
+            background-color: #ffffff;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* Layar Kalkulator */
+        .display-container {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            text-align: right;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            word-wrap: break-word;
+        }
+
+        .history {
+            font-size: 14px;
+            color: #94a3b8;
+            min-height: 20px;
+        }
+
+        .display {
+            font-size: 36px;
+            font-weight: bold;
+            color: #1e293b;
+            overflow-x: auto;
+        }
+
+        /* Area Tombol */
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            border: none;
+            padding: 16px;
+            font-size: 20px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Warna Tombol */
+        .btn-number {
+            background-color: #f1f5f9;
+            color: #334155;
+        }
+        .btn-number:hover { background-color: #e2e8f0; }
+
+        .btn-operator {
+            background-color: #e0e7ff;
+            color: #4338ca;
+        }
+        .btn-operator:hover { background-color: #c7d2fe; }
+
+        .btn-clear {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+        .btn-clear:hover { background-color: #fecaca; }
+
+        .btn-equals {
+            background-color: #4f46e5;
+            color: white;
+            grid-column: span 2;
+        }
+        .btn-equals:hover { background-color: #4338ca; }
+
+        /* Tombol Tantangan (Pangkat, Akar, Persen) */
+        .btn-advanced {
+            background-color: #fce7f3;
+            color: #be185d;
+            font-size: 16px;
+        }
+        .btn-advanced:hover { background-color: #fbcfe8; }
+
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <div class="display-container">
+            <div class="history" id="history"></div>
+            <div class="display" id="display">0</div>
+        </div>
+
+        <div class="buttons">
+            <!-- Baris 1: Advanced (Tantangan) & Clear -->
+            <button class="btn-advanced" onclick="appendOperator('**')">x<sup>y</sup></button>
+            <button class="btn-advanced" onclick="appendOperator('**2')">x²</button>
+            <button class="btn-advanced" onclick="appendOperator('%')">%</button>
+            <button class="btn-clear" onclick="clearAll()">C</button>
+
+            <!-- Baris 2: Hapus Karakter & Angka -->
+            <button class="btn-operator" onclick="deleteLast()">⌫</button>
+            <button class="btn-number" onclick="appendNumber('7')">7</button>
+            <button class="btn-number" onclick="appendNumber('8')">8</button>
+            <button class="btn-number" onclick="appendNumber('9')">9</button>
+
+            <!-- Baris 3: Operator & Angka -->
+            <button class="btn-operator" onclick="appendOperator('/')">÷</button>
+            <button class="btn-number" onclick="appendNumber('4')">4</button>
+            <button class="btn-number" onclick="appendNumber('5')">5</button>
+            <button class="btn-number" onclick="appendNumber('6')">6</button>
+
+            <!-- Baris 4: Operator & Angka -->
+            <button class="btn-operator" onclick="appendOperator('*')">×</button>
+            <button class="btn-number" onclick="appendNumber('1')">1</button>
+            <button class="btn-number" onclick="appendNumber('2')">2</button>
+            <button class="btn-number" onclick="appendNumber('3')">3</button>
+
+            <!-- Baris 5: Operator & Angka -->
+            <button class="btn-operator" onclick="appendOperator('-')">−</button>
+            <button class="btn-number" onclick="appendNumber('0')">0</button>
+            <button class="btn-number" onclick="appendNumber('.')">.</button>
+            <button class="btn-operator" onclick="appendOperator('+')">+</button>
+
+            <!-- Baris 6: Sama Dengan -->
+            <button class="btn-equals" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Logika JavaScript ---
+        const displayElement = document.getElementById('display');
+        const historyElement = document.getElementById('history');
+        
+        let currentInput = '0';
+        let calculationHistory = '';
+
+        // Update tampilan layar
+        function updateDisplay() {
+            displayElement.innerText = currentInput;
+            historyElement.innerText = calculationHistory;
+        }
+
+        // 1. Tombol Angka
+        function appendNumber(number) {
+            // Cegah input multiple titik desimal
+            if (number === '.' && currentInput.includes('.')) return;
+            
+            // Jika input saat ini '0' dan bukan titik, ganti dengan angka baru
+            if (currentInput === '0' && number !== '.') {
+                currentInput = number;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        // 2. Tombol Operator
+        function appendOperator(operator) {
+            const lastChar = currentInput.slice(-1);
+            const operators = ['+', '-', '*', '/', '%'];
+            
+            // Cegah operator berurutan (kecuali untuk minus negatif)
+            if (operators.includes(lastChar) && operators.includes(operator)) {
+                currentInput = currentInput.slice(0, -1) + operator;
+            } else if (operator === '**2') {
+                 // Logika khusus untuk kuadrat (x²)
+                currentInput = `(${currentInput})**2`;
+            } else {
+                currentInput += operator;
+            }
+            updateDisplay();
+        }
+
+        // 3. Tombol Clear (C)
+        function clearAll() {
+            currentInput = '0';
+            calculationHistory = '';
+            updateDisplay();
+        }
+
+        // 4. Tombol Hapus Karakter (Backspace)
+        function deleteLast() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        // 5. Tombol Hasil (=) & Validasi Pembagian Nol
+        function calculate() {
+            try {
+                // Simpan history sebelum dihitung
+                const expression = currentInput;
+                
+                // Validasi pembagian nol sebelum dieksekusi
+                if (expression.includes('/0') && !expression.includes('/0.')) {
+                    throw new Error("Tidak bisa membagi dengan nol!");
+                }
+
+                // Evaluasi ekspresi matematika
+                // Mengganti karakter tampilan ke format JS
+                let evalString = expression.replace(/×/g, '*').replace(/÷/g, '/');
+                
+                // Menggunakan Function agar lebih aman daripada eval()
+                let result = new Function('return ' + evalString)();
+
+                // Cek jika hasilnya Infinity atau NaN
+                if (!isFinite(result) || isNaN(result)) {
+                    throw new Error("Kesalahan Matematika");
+                }
+
+                // Format hasil (batasi desimal jika terlalu panjang)
+                result = parseFloat(result.toFixed(8)); // hindari error floating point
+
+                calculationHistory = expression + ' =';
+                currentInput = result.toString();
+                
+                updateDisplay();
+
+            } catch (error) {
+                // Tampilkan pesan error
+                currentInput = 'Error';
+                calculationHistory = error.message;
+                updateDisplay();
+                
+                // Reset otomatis setelah 2 detik
+                setTimeout(() => {
+                    if(currentInput === 'Error') clearAll();
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>
+
+<body>
+    <!-- ... kode HTML kalkulator ... -->
+
+    <!-- Hubungkan file JS di sini -->
+    <script src="script.js"></script>
+</body>
